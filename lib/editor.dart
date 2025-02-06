@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+
 class Editor extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController contentController;
-  VoidCallback saveTask;
+  final Function(String, String) saveTask;
 
-  Editor(
+  const Editor(
       {super.key,
       required this.titleController,
       required this.contentController,
@@ -13,12 +14,8 @@ class Editor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var myTitleFont = TextStyle(
-      color: Colors.white,
-      fontSize: 30,
-    );
     return Scaffold(
-      backgroundColor: Color(0xff252525),
+      backgroundColor: Color(0xffF4E1C1),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -30,27 +27,24 @@ class Editor extends StatelessWidget {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                        color: Color(0xff3b3b3b),
-                        borderRadius: BorderRadius.circular(15)),
+                        color: Color(0xffE4A74A),
+                        borderRadius: BorderRadius.circular(20)),
                     child: IconButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          contentController.clear();
                           titleController.clear();
-                        },
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_sharp,
-                          color: Colors.white,
-                        )),
+                          contentController.clear();
+                        }, icon: Icon(Icons.arrow_back),color: Color(0xff7D8F69), ),
                   ),
                   Container(
                     decoration: BoxDecoration(
-                        color: Color(0xff3b3b3b),
-                        borderRadius: BorderRadius.circular(15)),
+                        color: Color(0xffE4A74A),
+                        borderRadius: BorderRadius.circular(20)),
                     child: IconButton(
                         onPressed: () {
                           if (contentController.text.isNotEmpty) {
-                            saveTask();
+                            saveTask(titleController.text.trim(),
+                                contentController.text.trim());
                             Navigator.of(context).pop();
                           } else {
                             final snack = SnackBar(
@@ -59,14 +53,15 @@ class Editor extends StatelessWidget {
                                   label: 'Undo', onPressed: () {}),
                               duration: Duration(seconds: 10),
                               behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             );
                             ScaffoldMessenger.of(context).showSnackBar(snack);
                           }
                         },
                         icon: Icon(
                           Icons.save,
-                          color: Colors.white,
+                          color: Color(0xff7D8F69),
                         )),
                   ),
                 ],
@@ -79,15 +74,17 @@ class Editor extends StatelessWidget {
                 controller: titleController,
                 decoration: InputDecoration(
                     hintText: "Title",
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 30),
+                    hintStyle:
+                        TextStyle(color: Color(0xffC77459), fontSize: 32 , fontFamily: 'IBMPlexSerif-Regular'),
                     border: InputBorder.none),
                 style: TextStyle(
                     fontSize: 30,
-                    color: Colors.white,
+                    color: Color(0xff3D2B1F),
+                    fontFamily: 'IBMPlexSerif-Regular',
                     fontWeight: FontWeight.bold),
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
-                cursorColor: Colors.white,
+                cursorColor: Color(0xff3D2B1F),
               ),
 
               Expanded(
@@ -96,12 +93,12 @@ class Editor extends StatelessWidget {
                   decoration: InputDecoration(
                       hintText: "Type something",
                       hintStyle:
-                          TextStyle(color: Colors.grey[400], fontSize: 15),
+                          TextStyle(color: Color(0xffC77459), fontSize: 18 , fontFamily: 'IBMPlexSerif-Regular'),
                       border: InputBorder.none),
-                  style: TextStyle(fontSize: 15, color: Colors.white),
+                  style: TextStyle(fontSize: 16, color: Color(0xff3D2B1F) , fontFamily: 'IBMPlexSerif-Regular'),
                   maxLines: null,
                   keyboardType: TextInputType.multiline,
-                  cursorColor: Colors.white,
+                  cursorColor: Color(0xff3D2B1F),
                   enableSuggestions: true,
                 ),
               )

@@ -1,7 +1,13 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:notes_app/Note/to_Do_Page.dart';
+import 'package:notes_app/database.dart';
+import 'package:notes_app/dialog_box.dart';
 import 'package:notes_app/editor.dart';
 import 'package:notes_app/note_tile.dart';
 import 'dart:math';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,52 +17,89 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController noteController = TextEditingController();
-  Map < dynamic , dynamic> entries={};
   List<Color> colors = [];
-
+  //reference the box
+  final notesBox = Hive.box('notebox');
+  NotesDB db = NotesDB();
   Color getRandomColor() {
     final colors = [
-      Colors.red[300],
-      Colors.blue[300],
-      Colors.green[300],
-      Colors.orange[300],
-      Colors.purple[300],
-      Colors.teal[300],
-      Colors.pink[300],
-      Colors.amber[300],
-      Colors.cyan[300],
-      Colors.lime[300],
-      Colors.deepPurple[300],
+      Color(0xff4F6D7A),
     ];
     final random = Random();
-    return colors[random.nextInt(colors.length)]!;
+    return colors[random.nextInt(colors.length)];
   }
 
-  void buildTile() {
+  @override
+  void initState() {
+    super.initState();
+    if (notesBox.get("Note") == null) {
+      db.createInitialData();
+      colors.add(getRandomColor());
+    } else {
+      db.loadData();
+    }
+    _updateColors();
+  }
+
+  void _updateColors() {
+    // Ensure colors list matches the length of db.entries
+    while (colors.length < db.entries.length) {
+      colors.add(getRandomColor());
+    }
+    while (colors.length > db.entries.length) {
+      colors.removeLast();
+    }
+  }
+
+  void buildTile(String title, String content) {
     setState(() {
-      entries.add(titleController.text.trim());
+      db.entries.add([title, content]);
       colors.add(getRandomColor());
       contentController.clear();
       titleController.clear();
     });
+    db.updateDataBase();
+  }
+
+  void updateTile(int index, String newTitle, String newContent) {
+    setState(() {
+      db.entries[index] = [newTitle, newContent];
+      _updateColors();
+    });
+    db.updateDataBase();
+  }
+
+  void deleteTile(int index) {
+    setState(() {
+      db.entries.removeAt(index);
+    });
+    db.updateDataBase();
   }
 
   var myTitleFont = TextStyle(
-    color: Colors.white,
-    fontSize: 30,
-  );
+      color: Color(0xffD95D39),
+      fontSize: 32,
+      fontFamily: 'Pacifico-Regular',
+      shadows: [
+        Shadow(
+          offset: Offset(0.0, 0.0),
+          blurRadius: 10.0,
+          color: Color(0xffE4A74A).withOpacity(0.8),
+        ),
+      ]);
 
   //Text Editing Controllers Title & Content
   TextEditingController titleController = TextEditingController();
   TextEditingController contentController = TextEditingController();
 
   //variable for general font style
-  var myWhiteFont = TextStyle(color: Colors.white, fontSize: 15);
+  var myContentFont = TextStyle(
+      color: Colors.white, fontSize: 15, fontFamily: 'IBMPlexSerif-Regular');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xff252525),
+      backgroundColor: Color(0xffF4E1C1),
       body: SafeArea(
         // Custom App bar
         child: Column(
@@ -64,60 +107,64 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Notes",
                     style: myTitleFont,
                   ),
-                  Spacer(),
-
                   //Search Button
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xff3b3b3b),
-                        borderRadius: BorderRadius.circular(15)),
-                    child: IconButton(
-                        onPressed: () {},
-                        icon: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        )),
-                  ),
-                  SizedBox(
-                    width: 20,
-                  ),
                   //Information button
                   Container(
                     decoration: BoxDecoration(
-                        color: Color(0xff3b3b3b),
-                        borderRadius: BorderRadius.circular(15)),
+                        color: Color(0xffE4A74A),
+                        borderRadius: BorderRadius.circular(20)),
                     child: IconButton(
                         onPressed: () {},
                         icon: Icon(
                           Icons.info_outline_rounded,
-                          color: Colors.white,
+                          color: Color(0xff7D8F69),
                         )),
                   ),
                 ],
               ),
             ),
             SizedBox(
-              height: 25,
+              height: 10,
             ),
-            entries.isEmpty
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              child: Divider(),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            db.entries.isEmpty
                 ? Expanded(
                     child: Center(
                       child: Text(
                         "Press + to add new note",
-                        style: myWhiteFont,
+                        style: TextStyle(
+                            fontFamily: 'IBMPlexSerif-Regular',
+                            fontSize: 28,
+                            color: Color(0xff3D2B1F)),
                       ),
                     ),
                   )
                 : Expanded(
                     child: ListView.builder(
-                        itemCount: entries.length,
+                        itemCount: db.entries.length,
                         itemBuilder: (BuildContext context, int index) {
                           return GestureDetector(
+                            onLongPress: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) => DialogBox(
+                                        deleteNote: () {
+                                          deleteTile(index);
+                                        },
+                                      ));
+                            },
                             onTap: () {
                               Navigator.push(
                                   context,
@@ -125,14 +172,19 @@ class _HomePageState extends State<HomePage> {
                                       builder: (context) => Editor(
                                           titleController:
                                               TextEditingController(
-                                                  text: entries[index]),
+                                                  text: db.entries[index][0]),
                                           contentController:
                                               TextEditingController(
-                                                  text: entries[index]),
-                                          saveTask:buildTile)));
+                                                  text: db.entries[index][1]),
+                                          saveTask: (String newTitle,
+                                              String newContent) {
+                                            updateTile(
+                                                index, newTitle, newContent);
+                                          })));
                             },
                             child: NoteTile(
-                                name: entries[index], tileColor: colors[index]),
+                                name: db.entries[index][0],
+                                tileColor: colors[index]),
                           );
                         }),
                   )
@@ -145,7 +197,9 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.of(context).push(PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) => Editor(
-                    saveTask: buildTile,
+                    saveTask: (String newTitle, String newContent) {
+                      buildTile(newTitle, newContent);
+                    },
                     contentController: contentController,
                     titleController: titleController,
                   ),
@@ -184,7 +238,11 @@ class _HomePageState extends State<HomePage> {
         },
         elevation: 10,
         shape: CircleBorder(),
-        child: Icon(Icons.add),
+        backgroundColor: Color(0xffE4A74A),
+        child: FaIcon(
+          FontAwesomeIcons.featherPointed,
+          color: Color(0xff7D8F69),
+        ),
       ),
     );
   }
